@@ -156,4 +156,4 @@ cython_debug/
 .venv/
 
 # Authorization data
-auth.txt
+Neo4j-Credentials.txt
