@@ -67,6 +67,7 @@ def create_relationship(tx, relationship: Neo4jRelationship):
 
     return result.consume()
 
+
 def find_user(tx, user_id=None, user_name=None):
     if user_id:
         query = "MATCH (u:User) WHERE u.userID = $user_id RETURN u"
@@ -77,7 +78,11 @@ def find_user(tx, user_id=None, user_name=None):
     else:
         raise ValueError('User ID or User Name is required')
 
-    return [record["u"] for record in result]
+    users = [record["u"] for record in result]
+    if not users:
+        return f"No user found with {'ID' if user_id else 'name'}: {user_id if user_id else user_name}"
+    return f"User(s) found: {', '.join([str(user['name']) for user in users])}"
+
 
 def find_movie(tx, movie_id=None, movie_title=None):
     if movie_id:
@@ -89,7 +94,11 @@ def find_movie(tx, movie_id=None, movie_title=None):
     else:
         raise ValueError('Movie ID or Movie Title is required')
 
-    return [record["m"] for record in result]
+    movies = [record["m"] for record in result]
+    if not movies:
+        return f"No movie found with {'ID' if movie_id else 'title'}: {movie_id if movie_id else movie_title}"
+    return f"Movie(s) found: {', '.join([str(movie['title']) for movie in movies])}"
+
 
 def find_user_rating(tx, user_id, movie_id):
     query = """
@@ -98,7 +107,11 @@ def find_user_rating(tx, user_id, movie_id):
     RETURN u, r, m
     """
     result = tx.run(query, user_id=user_id, movie_id=movie_id)
-    return [{"user": record["u"], "rating": record["r"], "movie": record["m"]} for record in result]
+    ratings = [{"user": record["u"], "rating": record["r"], "movie": record["m"]} for record in result]
+    if not ratings:
+        return f"No rating found for user ID {user_id} on movie ID {movie_id}"
+    return f"Rating found: User {ratings[0]['user']['name']} rated movie {ratings[0]['movie']['title']} with {ratings[0]['rating']['rating']} stars"
+
 
 try:
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
@@ -119,13 +132,13 @@ try:
 
             # Busquedas
             user_found = find_user(session, user_id=1)
-            print(f'\nUser Found: \n{user_found}')
+            print(f'{user_found}\n')
 
             movie_found = find_movie(session, movie_id=1)
-            print(f'\nMovie Found: \n{movie_found}')
+            print(f'{movie_found}\n')
 
             found_relation = find_user_rating(session, user_id=1, movie_id=1)
-            print(f'\nRelationship Found: {found_relation}')
+            print(f'{found_relation}\n')
 
 except Exception as e:
     print(f'ERROR: {e}')
