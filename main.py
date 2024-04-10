@@ -1,6 +1,6 @@
 import os
 import dotenv
-import random
+from datetime import datetime
 from neo4j import GraphDatabase
 
 
@@ -118,27 +118,117 @@ try:
         driver.verify_connectivity()
         print('SUCCES: Connection to Neo4j instance established')
         with driver.session() as session:
-            # Creacion de nodos de usuario
-            user1 = Neo4jNode(labels=['User'], properties={'name': 'user1', 'userID': 1})
-            create_node(session, user1)
+            # Creacion de nodo persona actor director (PAD)
+            node_PAD = Neo4jNode(labels=['Person', 'Actor', 'Director'], 
+                                 properties={'name': 'Tom Hanks', 
+                                             'tmdbld': 31,
+                                             'born': datetime.strptime('01-01-1956', '%d-%m-%Y'),
+                                             'died': 'Not Dead',
+                                             'bornIn': 'Concord, California, USA',
+                                             'url:': 'tomhanks.com',
+                                             'imdbld': 158,
+                                             'bio':'Tom Hanks bio Here',
+                                             'poster': 'tomhanks.jpg'})
+            create_node(session, node_PAD)
 
-            # Creacion de nodos de peliculas
-            movie1 = Neo4jNode(labels=['Movie'], properties={'title': 'movie1', 'movieID': 1, 'year': random.randint(2000, 2021), 'plot': 'plot of the movie 1'})
-            create_node(session, movie1)
-            
-            # Creacion de relaciones Rated usuario -> pelicula
-            relationship1 = Neo4jRelationship(node1=user1, node2=movie1, relationship='RATED', properties={'rating': random.randint(1, 5), 'timestamp': random.randint(1, 100)})
+            # Creacion de nodo persona actor (PA)
+            node_PA = Neo4jNode(labels=['Person', 'Actor'], 
+                                properties={'name': 'Tom Cruise', 
+                                            'tmdbld': 500,
+                                            'born': datetime.strptime('01-01-1962', '%d-%m-%Y'),
+                                            'died': 'Not Dead',
+                                            'bornIn': 'Syracuse, New York, USA',
+                                            'url:': 'tomcruise.com',
+                                            'imdbld': 500,
+                                            'bio':'Tom Cruise bio Here',
+                                            'poster': 'tomcruise.jpg'})
+            create_node(session, node_PA)
+
+            # Creacion de nodo persona director (PD)
+            node_PD = Neo4jNode(labels=['Person', 'Director'], 
+                                properties={'name': 'Steven Spielberg', 
+                                            'tmdbld': 488,
+                                            'born': datetime.strptime('01-01-1946', '%d-%m-%Y'),
+                                            'died': 'Not Dead',
+                                            'bornIn': 'Cincinnati, Ohio, USA',
+                                            'url:': 'stevenspielberg.com',
+                                            'imdbld': 488,
+                                            'bio':'Steven Spielberg bio Here',
+                                            'poster': 'stevenspielberg.jpg'})
+            create_node(session, node_PD)
+
+            # Creacion de nodo usuario (User)
+            node_user = Neo4jNode(labels=['User'], 
+                                  properties={'name': 'User1', 
+                                              'userID': 1})
+            create_node(session, node_user)
+
+            # Creacion de nodo pelicula (Movie)
+            node_movie = Neo4jNode(labels=['Movie'], 
+                                   properties={'title': 'Forrest Gump', 
+                                               'tmdbld': 13,
+                                               'released': datetime.strptime('01-01-1994', '%d-%m-%Y'),
+                                               'imdbRating': 8,
+                                               'movieID': 1,
+                                               'year': 1994,
+                                               'imdbld': 13,
+                                               'runtime': 142,
+                                               'countries': ['USA', 'India'],
+                                               'imdbVotes': 1800,
+                                               'url': 'forrestgump.com',
+                                               'revenue': 1000000,
+                                               'plot': 'Forrest Gump plot Here',
+                                               'poster': 'forrestgump.jpg',
+                                               'budget': 900000,
+                                               'languages': ['English', 'Hindi']})
+            create_node(session, node_movie)
+
+            # Creacion de nodo genero (Genre)
+            node_genre = Neo4jNode(labels=['Genre'], 
+                                   properties={'name': 'Drama'})
+            create_node(session, node_genre)
+
+            # Creacion de relaciones entre nodos
+            # Relacion PAD con pelicula
+            relationship1 = Neo4jRelationship(node1=node_PAD, 
+                                              node2=node_movie, 
+                                              relationship='ACTED_IN', 
+                                              properties={'role': 'Forrest Gump'})
             create_relationship(session, relationship1)
+            relationship2 = Neo4jRelationship(node1=node_PAD, 
+                                              node2=node_movie, 
+                                              relationship='DIRECTED', 
+                                              properties={'role': 'Visual Director'})
+            create_relationship(session, relationship2)
 
-            # Busquedas
-            user_found = find_user(session, user_id=1)
-            print(f'{user_found}\n')
+            # Relaciones PA con pelicula
+            relationship3 = Neo4jRelationship(node1=node_PA, 
+                                              node2=node_movie, 
+                                              relationship='ACTED_IN', 
+                                              properties={'role': 'Forrest Gump'})
+            create_relationship(session, relationship3)
 
-            movie_found = find_movie(session, movie_id=1)
-            print(f'{movie_found}\n')
+            # Relaciones PD con pelicula
+            relationship4 = Neo4jRelationship(node1=node_PD, 
+                                              node2=node_movie, 
+                                              relationship='DIRECTED', 
+                                              properties={'role': 'General Director'})
+            create_relationship(session, relationship4)
 
-            found_relation = find_user_rating(session, user_id=1, movie_id=1)
-            print(f'{found_relation}\n')
+            # Relacion USER con pelicula
+            relationship5 = Neo4jRelationship(node1=node_user, 
+                                              node2=node_movie, 
+                                              relationship='RATED', 
+                                              properties={'rating': 5,
+                                                          'timestamp': 105})
+            create_relationship(session, relationship5)
+
+            # Relacion GENRE con pelicula
+            relationship6 = Neo4jRelationship(node1=node_genre, 
+                                              node2=node_movie, 
+                                              relationship='GENRE', 
+                                              properties={})
+            create_relationship(session, relationship6)
 
 except Exception as e:
     print(f'ERROR: {e}')
